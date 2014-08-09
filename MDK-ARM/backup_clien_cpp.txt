@@ -1,0 +1,166 @@
+uint16_t plen;
+	uint8_t i;
+
+	if (client_data_ready == 0 || data_length == 0)  
+		return;	 // nothing to send
+
+	if(client_state == IDLE)
+	{   
+		// initialize ARP
+		make_arp_request(buf, dest_ip);
+
+		client_state = ARP_SENT;
+		return;
+	}
+
+	if(client_state == ARP_SENT)
+	{
+
+		plen = enc28j60PacketReceive(BUFFER_SIZE, buf);
+
+		// destination ip address was found on network
+		if ( plen!=0 )
+		{
+			if (arp_packet_is_myreply_arp ( buf ) )
+			{
+				client_state = ARP_REPLY;
+				syn_ack_timeout=0;
+				return;
+			}
+
+		}
+// 		_delay_ms(10);
+		syn_ack_timeout++;
+
+		if(syn_ack_timeout == 1000) // 1s
+		{  
+			//timeout, server ip not found
+			client_state = IDLE;
+			client_data_ready =0;
+			syn_ack_timeout=0;
+			return;
+		}	
+	}
+
+	// send SYN packet to initial connection
+	if(client_state == ARP_REPLY)
+	{
+		// save dest mac
+		for(i=0; i<6; i++)
+		{
+			dest_mac[i] = buf[ETH_SRC_MAC+i];
+		}
+		
+		// send syn message in three-way handshake
+		tcp_client_send_packet (
+			buf,
+			dest_port,
+			myport,
+			TCP_FLAG_SYN_V,				 // flag
+			1,											  // (bool)maximum segment size
+			1,											  // (bool)clear sequence ack number
+			0,											  // 0=use old seq, seqack : 1=new seq,seqack no data : new seq,seqack with data
+			0,											  // tcp data length
+			dest_mac,
+			dest_ip
+		);
+
+		client_state = SYNC_SENT;
+	}
+	// get new packet
+	if(client_state == SYNC_SENT)
+	{
+		// server response with ACK and SYN flag
+		// three-way handshake
+		plen = enc28j60PacketReceive(BUFFER_SIZE, buf);
+
+		// no new packet incoming
+		if ( plen == 0 )
+			return;
+		// check ip packet send to me or not?
+		// accept ip packet only
+		if (eth_type_is_ip_and_my_ip(buf,plen)==0)
+			return;
+
+		// check SYNACK flag, after client send SYN server response by send SYNACK to client
+		
+		if ( buf [ TCP_FLAGS_P ] == ( TCP_FLAG_SYN_V | TCP_FLAG_ACK_V ) )
+		{
+			// send ACK to answer SYNACK
+
+			// client send ACK flag to open TCP session
+			tcp_client_send_packet (
+				buf,
+				dest_port,
+				myport,
+				TCP_FLAG_ACK_V,				 // flag
+				0,											  // (bool)maximum segment size
+				0,											  // (bool)clear sequence ack number
+				1,											  // 0=use old seq, seqack : 1=new seq,seqack no data : new seq,seqack with data
+				0,											  // tcp data length
+				dest_mac,
+				dest_ip
+			);
+			
+			// mount data to buffer
+ 			for (i = 0; i < data_length; i++)
+			{
+				buf[TCP_CHECKSUM_L_P+3+i]=databuf[i];
+			}
+			
+//			plen = fill_tcp_data(buf,0, "Tra Quang Kieu" );
+			// send packet with PSHACK
+			tcp_client_send_packet (
+							   buf,
+							   dest_port,											 // destination port
+							   myport,								   // source port
+							   TCP_FLAG_ACK_V | TCP_FLAG_PUSH_V,						// flag
+							   0,											  // (bool)maximum segment size
+							   0,											  // (bool)clear sequence ack number
+							   0,											  // 0=use old seq, seqack : 1=new seq,seqack no data : >1 new seq,seqack with data
+							   data_length,						   // tcp data length
+							   dest_mac,
+							   dest_ip
+							   );
+			return;
+		}
+		// after client send data to server, server response by send ACK to client
+		// client answer by send ACK and FINACK to server
+		if ( buf [ TCP_FLAGS_P ] == (TCP_FLAG_ACK_V) )
+		{
+			// send finack to disconnect from web server
+
+			tcp_client_send_packet (
+							   buf,
+							   dest_port,											 // destination port
+							   myport,								   // source port
+							   TCP_FLAG_FIN_V|TCP_FLAG_ACK_V,				  // flag
+							   0,											  // (bool)maximum segment size
+							   0,											  // (bool)clear sequence ack number
+							   0,										   // 0=use old seq, seqack : 1=new seq,seqack no data : >1 new seq,seqack with data
+							   0,
+								dest_mac,
+								dest_ip
+			);
+			return;
+		}
+		// answer FINACK from web server by send ACK to web server
+		if ( buf [ TCP_FLAGS_P ] == (TCP_FLAG_ACK_V|TCP_FLAG_FIN_V) )
+		{
+			// send ACK with seqack = 1
+			tcp_client_send_packet(
+				buf,
+				dest_port,											 // destination port
+				myport,								   // source port
+				TCP_FLAG_ACK_V,				 // flag
+				0,											  // (bool)maximum segment size
+				0,											  // (bool)clear sequence ack number
+				1,											  // 0=use old seq, seqack : 1=new seq,seqack no data : >1 new seq,seqack with data
+				0,
+				dest_mac,
+				dest_ip
+			);
+			client_state = IDLE;		// return to IDLE state
+			client_data_ready =0;		// client data sent
+		}
+	}

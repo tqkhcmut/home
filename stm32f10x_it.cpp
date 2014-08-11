@@ -24,10 +24,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f10x_it.h"
 #include "delay/delay.h"
-#include "assistant.h"
 #include "ENC28J60/client.h"
-	 
-// int OneMS = 0;
 
 /** @addtogroup STM32F10x_StdPeriph_Template
   * @{
@@ -43,6 +40,8 @@
 /******************************************************************************/
 /*            Cortex-M3 Processor Exceptions Handlers                         */
 /******************************************************************************/
+
+int counter = 0;
 
 /**
   * @brief  This function handles NMI exception.
@@ -140,7 +139,12 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
 	delay_routine();
-	Client_ping();
+	// 1ms is so fast
+	if (counter++ > 10)
+	{
+		Client_ping();
+		counter = 0;
+	}
 }
 
 /******************************************************************************/

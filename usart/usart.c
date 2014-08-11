@@ -1,6 +1,5 @@
 #include "usart.h"
 
-#ifdef USART_BUFFERED
 volatile uint8_t TxBuffer[USART_BUFFER_SIZE];
 volatile uint8_t RxBuffer[USART_BUFFER_SIZE];
 volatile int16_t RxCounter = -1;
@@ -136,4 +135,3 @@ void USART1_IRQHandler(void)
 	}
 	// Echo code
 }
-#endif

@@ -22,6 +22,10 @@
 #ifndef NET_H
 #define NET_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 // ******* ETH *******
 #define ETH_HEADER_LEN	14
 // values of certain bytes:
@@ -197,6 +201,10 @@
 // magic cookie: 4 bytes
 #define BOOTP_MAGIC_COOKIE_P 		(BOOTP_MSG_TYPE_P + 229) // 4 byte
 
+#ifdef __cplusplus
+}
+#endif
+	
 //
 #endif
 //@}

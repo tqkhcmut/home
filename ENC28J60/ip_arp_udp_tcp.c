@@ -446,7 +446,7 @@ uint16_t fill_tcp_data_v2(uint8_t *buf,uint16_t pos, uint8_t *s)
     // fill in tcp data at position pos
     //
     // with no options the data starts after the checksum + 2 more bytes (urgent ptr)
-    while (*s != '#') {
+    while (*s != 0) {
         buf[TCP_DATA_P+pos]=*s;
         pos++;
         s++;
@@ -606,22 +606,6 @@ void tcp_client_send_packet(uint8_t *buf,uint16_t dest_port, uint16_t src_port, 
 
     buf[TCP_SRC_PORT_H_P]= (uint8_t) ( (src_port>>8) & 0xff);
     buf[TCP_SRC_PORT_L_P]= (uint8_t) (src_port & 0xff);
-
-    // sequence numbers:
-    // add the rel ack num to SEQACK
-
-////    if(next_ack_num)
-////    {
-//        for(i=4; i>0; i--)
-//        {
-//            next_ack_num=buf[TCP_SEQ_H_P+i-1]+next_ack_num;
-//            tseq=buf[TCP_SEQACK_H_P+i-1];
-//            buf[TCP_SEQACK_H_P+i-1]=0xff&next_ack_num;
-//            // copy the acknum sent to us into the sequence number
-//            buf[TCP_SEQ_P + i - 1 ] = tseq;
-//            next_ack_num>>=8;
-//        }
-////    }
 	
 	if (next_ack_num)
 		seq += next_ack_num;

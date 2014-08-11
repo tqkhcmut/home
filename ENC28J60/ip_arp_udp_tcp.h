@@ -15,6 +15,11 @@
 #ifndef IP_ARP_UDP_TCP_H
 #define IP_ARP_UDP_TCP_H
 
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 #include <inttypes.h>
 
 // you must call this function once before you use any of the other functions:
@@ -42,5 +47,9 @@ extern void tcp_client_send_packet(uint8_t *buf,uint16_t dest_port, uint16_t src
 extern uint16_t tcp_get_dlength ( uint8_t *buf );
 
 
+#ifdef __cplusplus
+}
+#endif
+	
 #endif /* IP_ARP_UDP_TCP_H */
 //@}

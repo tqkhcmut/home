@@ -1,5 +1,10 @@
 #ifndef ENC28J60_H
 #define ENC28J60_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+	
 #include <inttypes.h>
 
 // ENC28J60 Control Registers
@@ -255,5 +260,10 @@ extern void enc28j60PacketSend(uint16_t len, uint8_t* packet);
 extern uint16_t enc28j60PacketReceive(uint16_t maxlen, uint8_t* packet);
 extern uint8_t enc28j60getrev(void);
 
+
+#ifdef __cplusplus
+}
+#endif
+	
 #endif
 //@}

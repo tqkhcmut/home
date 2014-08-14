@@ -1,6 +1,8 @@
 #ifndef queue_h
 #define queue_h
-	
+
+#include <iostream>
+
 #define QUEUE_SIZE 20
 
 #define STRING_SIZE 20
@@ -17,9 +19,10 @@ class Queue
 	int QueueSize;
 		
 	public:
-		void Init(void);
+		Queue();
 		char * Dequeue(void);
 		int Enqueue(char * string);
 		int Size(void);
+		int Clear(void);
 };
 #endif // queue_h
